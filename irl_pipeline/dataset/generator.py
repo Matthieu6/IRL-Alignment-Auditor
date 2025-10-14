@@ -13,7 +13,6 @@ from tqdm import tqdm
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from datasets import load_dataset, Dataset
-from irl_pipeline.utils import create_wandb_tags
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import HfApi
 import wandb
@@ -463,7 +462,12 @@ def generate_dataset(config: DictConfig) -> str:
     if config.logging.use_wandb:
         model_name_safe = model_name.split('/')[-1]
         run_name = f"dataset_gen_{model_name_safe}_{config.dataset.num_samples}"
-        tags = create_wandb_tags(config)
+        # Simple tags for WandB run
+        tags = [
+            f"model={model_name_safe}",
+            f"samples={config.dataset.num_samples}",
+            "dataset_generation"
+        ]
         wandb.init(
             project=config.logging.project_name,
             name=run_name,

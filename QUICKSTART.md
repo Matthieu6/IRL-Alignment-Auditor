@@ -210,38 +210,3 @@ Now that you've run your first experiment:
 3. **Adjust Parameters**: Tune hyperparameters for better performance
 4. **Read Documentation**: Check out the detailed guides in `docs/`
 5. **Understand the Code**: Explore the `irl_pipeline/` package structure
-
-## Advanced Usage
-
-### Using Hydra Directly
-```bash
-# Run with Hydra directly for more control
-python scripts/generate_datasets.py --config-name=full_pipeline toxic_model=EleutherAI/pythia-70m
-
-python scripts/train_irl_model.py --config-name=re_irl_config model.base_model_name=EleutherAI/pythia-70m
-```
-
-### Custom Configuration
-Create your own config files in `configs/` and reference them:
-```bash
-python scripts/train_irl_model.py --config-name=my_custom_config
-```
-
-### Programmatic Usage
-```python
-from irl_pipeline.dataset.generator import generate_dataset
-from irl_pipeline.irl.re_irl import run_evaluation_logic
-from omegaconf import OmegaConf
-
-# Load configuration
-cfg = OmegaConf.load("configs/full_pipeline.yaml")
-
-# Generate datasets
-dataset_ids = generate_dataset(cfg)
-
-# Train IRL model
-results = run_evaluation_logic(cfg, output_dir="my_outputs")
-```
-
-Congratulations! You've successfully set up and run the IRL-Bayesian pipeline. 🎉
-
