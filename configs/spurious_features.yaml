@@ -1,0 +1,66 @@
+# Spurious Features Analysis Configuration
+# Controls uncertainty mapping and spurious marker injection experiments
+
+spurious_features:
+  # Enable spurious features analysis in pipeline
+  enabled: false
+  
+  # Posterior paths (auto-discovered if not specified)
+  mu: null
+  sig: null
+  trainpool_mean: null
+  trainpool_std: null
+  reirl_root: re_irl_min_stratified_plots
+  reirl_dir: ""     # e.g. outputs/re_irl_min_stratified_plots/EleutherAI_pythia-1b/round_1
+
+  # Choose which round: integer or "latest"
+  round: latest     # or 1, 2, ...
+
+  out_dir: outputs/spurious_maps/${now:%Y%m%d_%H%M%S}
+
+
+  # Dataset paths (auto-discovered from model if not specified)
+  sorted_toxic_path: null
+  sorted_nontoxic_path: null
+  
+  # Model configuration
+  normalization_strategy: ${training.normalization_strategy}
+  max_length: ${training.max_length}
+  batch_size: ${training.batch_size}
+  
+  # Output configuration
+  output_dir: spurious_analysis
+  
+  # PCA and visualization
+  knn_k: 20  # k for local uncertainty smoothing
+  clip_low_pct: 5.0  # Percentile for color scale lower bound
+  clip_high_pct: 95.0  # Percentile for color scale upper bound
+  
+  # Optional: mutual information computation
+  compute_mi: false
+  mi_samples: 128
+  platt_a: 1.0
+  platt_b: 0.0
+  
+  # Dataset balancing
+  balance_dataset: true
+  balance_seed: 7
+  
+  # Spurious marker injection (test-time)
+  inject_marker: ""  # e.g., "[MARKER]" or "TOXIC" to inject
+  inject_scope: "all"  # options: all, toxic, nontoxic
+  inject_position: "suffix"  # options: suffix, prefix, both
+  inject_fraction: 0.2  # 0.0-1.0 fraction of examples to mark
+  inject_seed: 0
+  
+  # Visualization controls
+  color_mode: "metric"  # options: metric (show uncertainty), injection (show marked vs clean)
+  injected_outline_size: 36.0  # Size of outline for marked points
+  
+  # Cross-run consistency (optional)
+  scale_json: ""  # Path to save/load color scales for consistency
+  pca_json: ""    # Path to save/load PCA components for stable axes
+  
+  # Device
+  cpu: false  # Force CPU if true
+

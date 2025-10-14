@@ -1,0 +1,103 @@
+
+# Hydra settings
+hydra:
+  run:
+    dir: ${oc.env:PWD}/outputs/re_irl/${now:%Y%m%d_%H%M%S}
+
+# Global settings
+seed: 42
+device: cuda
+
+# Dataset paths
+dataset:
+  original_dataset_path: null # e.g. if needed datasets/EleutherAI_pythia-70m_3100_samples_detoxified.json
+  detoxified_dataset_path: null # e.g. datasets/ajagota71_pythia-70m-s-nlp-detox-checkpoint-epoch-100_3100_samples_detoxified.json
+  sorted_toxic_dataset_path: null # e.g. datasets/sorted_toxic_dataset_EleutherAI_pythia-70m.json
+  sorted_non_toxic_dataset_path: null # e.g. datasets/sorted_non_toxic_dataset_EleutherAI_pythia-70m.json
+
+# Model configuration
+model:
+  base_model_name: ${toxic_model}  # References global toxic_model from full_pipeline.yaml
+  reward_classifier: s-nlp/roberta_toxicity_classifier
+  hidden_size: null  # Feature dimension (auto-detected from model.models list)
+  run_all: false  # Set to true to run all models automatically
+  
+
+  # Model configurations for run_all mode
+  models:
+    - name: "HuggingFaceTB/SmolLM-360M"
+      hidden_size: 960
+      detox_name: "ajagota71/SmolLM-360M-detox"
+    - name: "HuggingFaceTB/SmolLM-135M"
+      hidden_size: 576
+      detox_name: "ajagota71/SmolLM-135M-detox"
+    - name: "EleutherAI/gpt-neo-125m"
+      hidden_size: 768
+      detox_name: "ybelkada/gpt-neo-125m-detox"
+    - name: "EleutherAI/pythia-70m"
+      hidden_size: 512
+      detox_name: "ajagota71/pythia-70m-s-nlp-detox-checkpoint-epoch-100"
+    - name: "EleutherAI/pythia-410m"
+      hidden_size: 1024
+      detox_name: "ajagota71/pythia-410m-s-nlp-detox-checkpoint-epoch-100"
+    - name: "meta-llama/Llama-3.2-1B"
+      hidden_size: 2048
+      detox_name: "ajagota71/llama-3-2-1b-rlhf-kl-p5-target-2p5-lr-3e-6-checkpoint-epoch-100"
+    - name: "EleutherAI/pythia-1b"
+      hidden_size: 2048
+      detox_name: "ajagota71/pythia-1b-s-nlp-detox-checkpoint-epoch-100"
+
+# Training configuration
+training:
+  n_steps: 3000
+  learning_rate: 0.01
+  n_samples: 1000
+  k_folds: 5
+  use_learnable_temperature: false
+  alpha: 1.0  # Bradley-Terry alpha parameter
+  
+  # Feature settings
+  max_length: 256
+  batch_size: 32
+  enable_feature_normalization: false
+  normalization_strategy: none
+
+  # Split configuration
+  cal_fraction: 0.10
+  val_fraction: 0.10
+  monitor_fraction: 0.10  # Fraction for fixed VAL_MONITOR across rounds
+
+# Evaluation configuration
+evaluation:
+  ref_size: 500
+  n_bins: 10
+  percentile: 95.0
+  use_teacher_labels_for_sorted: true  # Use teacher labels for sorted datasets instead of membership
+  # Calibration settings
+  save_uncertainty_details: true          # writes the vectors + index maps
+  dump_topk_uncertainty_texts: false      # set true to emit top-k JSONs with texts
+  topk: 20
+
+  calibration:
+    method: platt   # options: platt, temperature, none
+    a_bounds: [0.0, null]  # monotone for platt (a>=0); set [0.0, 0.0] to force a=0
+    b_bounds: [null, null]  # platt intercept bounds; set [0.0, 0.0] to force b=0 (temperature-only)
+
+# Plotting configuration
+plotting:
+  save_dir: re_irl_plots
+  dpi: 300
+  
+# WandB configuration
+wandb:
+  use_wandb: true
+  project: re_irl_clean
+  entity: null  # Set your wandb entity if needed
+  mode: online
+  log_interval: 100
+  save_artifacts: true
+
+# Output configuration
+output:
+  save_results: true
+  results_filename: re_irl_bt_clean_results.json

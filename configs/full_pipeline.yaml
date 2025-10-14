@@ -1,0 +1,41 @@
+# Full pipeline configuration for IRL experiments
+# This config includes dataset generation, VI training, and RLHF training
+
+# ============================================================================
+# GLOBAL MODEL CONFIGURATION
+# Define these once - they will be used across all pipeline components:
+#   - Dataset generation: toxic_model → toxic outputs, non_toxic_model → clean outputs
+#   - IRL training: toxic_model for feature extraction (original outputs)
+#   - RLHF training: toxic_model as starting checkpoint
+#   - RLHF evaluation: toxic_model as baseline for comparison
+# ============================================================================
+toxic_model: "meta-llama/Llama-3.2-1B"  # Base model (generates toxic content)
+non_toxic_model: "ajagota71/llama-3-2-1b-rlhf-kl-p5-target-2p5-lr-3e-6-checkpoint-epoch-100"  # Detoxified model
+
+
+# Pipeline Control
+pipeline:
+  run_dataset_generation: true
+  run_vi_training: true
+  run_sampling_exploration: true
+  run_distance_rlhf: true
+  run_spurious_analysis: false  # Set to true to run spurious features analysis
+  run_rlhf_training: false  # Set to true to run RLHF training
+
+# Include base configurations
+defaults:
+  - _self_
+  - dataset
+  - re_irl_config
+  - spurious_features
+  - rlhf_config
+  - evaluate_rlhf
+
+
+
+
+# Logging configuration
+logging:
+  use_wandb: true
+  project_name: "irl_full_pipeline"
+  wandb_mode: "online" 

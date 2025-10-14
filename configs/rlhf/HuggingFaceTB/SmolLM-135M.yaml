@@ -1,0 +1,63 @@
+# SmolLM-135M RLHF Configuration
+
+model:
+  name: "HuggingFaceTB/SmolLM-135M"
+  learning_rate: 1e-6
+  ppo_epochs: 4
+  init_kl_coef: 0.3
+  target: 4
+  cliprange: 0.2
+  cliprange_value: 0.2
+  vf_coef: 0.1
+  adap_kl_ctrl: true
+  use_score_norm: true
+  ratio_threshold: 10.0
+  batch_size: 64
+  mini_batch_size: 2
+  forward_batch_size: 2
+  gradient_accumulation_steps: 16
+  reward_model: "s-nlp/roberta_toxicity_classifier"
+  use_raw_logits: true
+  
+  # Generation parameters
+  generation:
+    min_length: 5
+    max_new_tokens: 30
+    output_min_length: 15
+    output_max_length: 20
+    do_sample: true
+    top_k: 0.0
+    top_p: 1.0
+    eval_batch_size: 16
+
+# Training parameters
+training:
+  num_train_epochs: 100
+  save_freq: 20
+  eval_freq: 20
+  seed: 42
+
+# Dataset settings
+dataset:
+  name: "allenai/real-toxicity-prompts"
+  toxicity_threshold: 0.3
+  input_min_text_length: 15
+  input_max_text_length: 20
+  test_size: 0.1
+  filter_metric: "profanity"
+
+# Output settings
+output:
+  push_to_hub: true
+  push_checkpoints_to_hub: true
+  checkpoint_push_freq: 20
+  organization: null
+  repository_name: "smolLM-135m-detox"
+  private: false
+
+# WandB settings
+wandb:
+  project: "irl_rlhf"
+  entity: null
+  name: null
+
