@@ -22,7 +22,6 @@ model:
   hidden_size: null  # Feature dimension (auto-detected from model.models list)
   run_all: false  # Set to true to run all models automatically
   
-
   # Model configurations for run_all mode
   models:
     - name: "HuggingFaceTB/SmolLM-360M"
@@ -51,7 +50,7 @@ model:
 training:
   n_steps: 3000
   learning_rate: 0.01
-  n_samples: 1000
+  n_samples: 1000  # Used by OmegaConf.select with default 256
   k_folds: 5
   use_learnable_temperature: false
   alpha: 1.0  # Bradley-Terry alpha parameter
@@ -59,7 +58,6 @@ training:
   # Feature settings
   max_length: 256
   batch_size: 32
-  enable_feature_normalization: false
   normalization_strategy: none
 
   # Split configuration
@@ -69,35 +67,8 @@ training:
 
 # Evaluation configuration
 evaluation:
-  ref_size: 500
-  n_bins: 10
-  percentile: 95.0
   use_teacher_labels_for_sorted: true  # Use teacher labels for sorted datasets instead of membership
-  # Calibration settings
   save_uncertainty_details: true          # writes the vectors + index maps
   dump_topk_uncertainty_texts: false      # set true to emit top-k JSONs with texts
   topk: 20
-
-  calibration:
-    method: platt   # options: platt, temperature, none
-    a_bounds: [0.0, null]  # monotone for platt (a>=0); set [0.0, 0.0] to force a=0
-    b_bounds: [null, null]  # platt intercept bounds; set [0.0, 0.0] to force b=0 (temperature-only)
-
-# Plotting configuration
-plotting:
-  save_dir: re_irl_plots
-  dpi: 300
-  
-# WandB configuration
-wandb:
-  use_wandb: true
-  project: re_irl_clean
-  entity: null  # Set your wandb entity if needed
-  mode: online
-  log_interval: 100
-  save_artifacts: true
-
-# Output configuration
-output:
-  save_results: true
-  results_filename: re_irl_bt_clean_results.json
+  sorted_pairwise_max_pairs: 10000  # Used by OmegaConf.select with default 10000

@@ -39,7 +39,7 @@ except Exception:
 
 from irl_pipeline.irl.ground_truth import GroundTruthGenerator
 from irl_pipeline.irl.reward_computer import SimplifiedIRLRewardComputer
-from irl_pipeline.irl.birl_mcmc import _log_likelihood_bradley_terry
+from irl_pipeline.irl.bt_likelihood import _log_likelihood_bradley_terry
 
 
 # -------------------------- utils --------------------------
@@ -1885,17 +1885,6 @@ def run_evaluation_logic(cfg: DictConfig, out_dir: Path):
             "sorted_pairwise_acc_TEST": auroc,                     # (AUROC on TEST equals pairwise acc on TEST)
             "sorted_pair_p_entropy_median": float(np.median(H_total_sorted_pair)) if H_total_sorted_pair.size else float('nan'),
             "sorted_pair_p_MI_median": float(np.median(MI_sorted_pair)) if MI_sorted_pair.size else float('nan'),
-            # "safe_intra_non_toxic_pairwise_acc": acc_nn,
-            # "safe_intra_non_toxic_mean_abs_gap": gap_nn,
-            # "safe_intra_non_toxic_spearman_teacher": rho_nn,
-            # "toxic_intra_pairwise_acc": acc_tt,
-            # "toxic_intra_mean_abs_gap": gap_tt,
-            # "toxic_intra_spearman_teacher": rho_tt,
-            # "safe_band_tau": tau,
-            # "safe_band_size": int(mask_safe.sum()) if np.isfinite(mask_safe.sum()) else 0,
-            # "safe_band_pairwise_acc": acc_safe,
-            # "safe_band_mean_abs_gap": gap_safe,
-            # "safe_band_spearman_teacher": rho_safe,
 
         })
 
