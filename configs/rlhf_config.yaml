@@ -54,6 +54,6 @@ irl:
   platt_a: 1.0
   platt_b: 0.0
   features_on_cpu: false  # use true for GPU memory efficiency
-  reward_scale: 20
-  reward_clip: 3
+  reward_scale: 8
+  reward_clip: 4
 
