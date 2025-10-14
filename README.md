@@ -1,6 +1,6 @@
 # IRL Alignment Auditor
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Matthieu6/IRL-Alignment-Auditor/blob/main/example_usage.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1uVTJjALi97DEseu7ip_5sBlbACDrEul9)
 [![Paper](https://img.shields.io/badge/Paper-arXiv%3A2510.06096-red)](https://arxiv.org/abs/2510.06096)
 
 A production-ready pipeline for auditing and refining LLM objectives using Inverse Reinforcement Learning (IRL) with Variational Inference. This package provides a clean, organized implementation of Bayesian IRL methods for learning reward models from human preferences.
@@ -44,7 +44,7 @@ python -c "import irl_pipeline; print('Installation successful!')"
 
 ## 📓 Google Colab Example
 
-**Try it now**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Matthieu6/IRL-Alignment-Auditor/blob/main/example_usage.ipynb)
+**Try it now**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1uVTJjALi97DEseu7ip_5sBlbACDrEul9)
 
 The example notebook demonstrates:
 - Complete pipeline execution with Llama-3.2-1B (including IRL+RLHF)
@@ -189,7 +189,7 @@ The pipeline uses Hydra for configuration management:
 **CUDA Out of Memory:**
 ```bash
 # Use smaller models
-./run_pipeline.sh full toxic_model=EleutherAI/pythia-70m
+./run_pipeline.sh complete toxic_model=EleutherAI/pythia-70m
 ```
 
 **Missing Dependencies:**

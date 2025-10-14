@@ -61,12 +61,10 @@ show_usage() {
     echo "  analyze     Run spurious features analysis (requires trained model)"
     echo "  rlhf        Run RLHF training only"
     echo "  evaluate    Evaluate trained RLHF models on toxicity"
-    echo "  full        Run full pipeline (generate + train)"
     echo "  complete    Run complete pipeline (generate + train + analyze)"
     echo "  help        Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0 full                                           # Run generate + train"
     echo "  $0 complete                                       # Run generate + train + analyze"
     echo "  $0 generate                                       # Generate datasets only"
     echo "  $0 train                                          # Train IRL model only"
@@ -121,22 +119,6 @@ run_rlhf_evaluation() {
     print_success "RLHF evaluation completed!"
 }
 
-# Function to run full pipeline (generate + train)
-run_full_pipeline() {
-    print_status "Starting full IRL pipeline..."
-    
-    # Step 1: Generate datasets
-    print_status "Step 1/2: Generating datasets..."
-    python scripts/generate_datasets.py "$@"
-    print_success "Dataset generation completed!"
-    
-    # Step 2: Train IRL model
-    print_status "Step 2/2: Training IRL model..."
-    python scripts/train_irl_model.py "$@"
-    print_success "IRL model training completed!"
-    
-    print_success "Full pipeline completed successfully!"
-}
 
 # Function to run complete pipeline (generate + train + analyze)
 run_complete_pipeline() {
@@ -181,10 +163,6 @@ case "${1:-help}" in
     "evaluate")
         shift  # Remove the first argument
         run_rlhf_evaluation "$@"
-        ;;
-    "full")
-        shift  # Remove the first argument
-        run_full_pipeline "$@"
         ;;
     "complete")
         shift  # Remove the first argument
