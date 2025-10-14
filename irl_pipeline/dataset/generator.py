@@ -80,21 +80,8 @@ class DatasetGenerator:
             toxicity_metric = getattr(self.config.dataset, "toxicity_metric", "toxicity")
             print(f"Filtering prompts using '{toxicity_metric}' > {self.config.dataset.toxicity_threshold}")
 
-        if dataset_name == "skrishna/toy-toxicity-dataset":
-            ds = load_dataset(dataset_name, split="train")
-            n_words = getattr(self.config.dataset, "toy_prompt_num_words", 2)
-
-            prompts = []
-            for ex in ds:
-                words = ex["text"].strip().split()
-                if len(words) >= n_words:
-                    prompt = " ".join(words[:n_words])
-                    prompts.append(prompt)
-
-            random.shuffle(prompts)
-            num_samples = min(self.config.dataset.num_samples, len(prompts))
-            self.prompts = prompts[:num_samples]
-        else:
+        # Only support RTP via HF datasets
+        if dataset_name == "allenai/real-toxicity-prompts":
             ds = load_dataset(dataset_name, split="train")
 
             def filter_fn(sample):
@@ -117,7 +104,9 @@ class DatasetGenerator:
             print(f"Selecting prompts {start_idx} to {end_idx} (offset: {prompt_offset})")
             ds = ds.select(range(start_idx, end_idx))
             self.prompts = [example["prompt"]["text"] for example in ds]
-
+        else:   
+            raise ValueError(f"Dataset {dataset_name} not supported")
+            
         print(f"Loaded {len(self.prompts)} prompts")
         return self.prompts
 
@@ -366,23 +355,6 @@ class DatasetGenerator:
             sample_table = wandb.Table(dataframe=pd.DataFrame(self.generated_data[:10]))
             wandb.log({"dataset_samples": sample_table})
 
-        # Push to HuggingFace if configured
-        if self.config.dataset.push_to_hub:
-            print(f"Pushing dataset to HuggingFace Hub...")
-            
-            # Create the dataset
-            hf_dataset = Dataset.from_pandas(pd.DataFrame(self.generated_data))
-            
-            # Push to hub
-            repo_id = f"{self.config.dataset.hub_org}/{self.dataset_id}" if self.config.dataset.hub_org else self.dataset_id
-            
-            hf_dataset.push_to_hub(
-                repo_id,
-                private=self.config.dataset.private,
-                token=self.config.dataset.hub_token
-            )
-            
-            print(f"Dataset pushed to HuggingFace: {repo_id}")
 
     def load_dataset(self):
         """Load dataset from disk."""

@@ -41,12 +41,6 @@ dataset:
   use_cached: false
   use_half_precision: null
 
-  # Hugging Face Hub upload (off by default)
-  push_to_hub: false
-  hub_org: null
-  hub_token: ${oc.env:HF_TOKEN, null}
-  private: false
-
 # ------------ logging ------------
 logging:
   use_wandb: false
