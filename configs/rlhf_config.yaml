@@ -19,13 +19,6 @@ training:
   seed: 42
   fast_start: true
 
-# Dataset parameters
-# dataset:
-#   name: "allenai/real-toxicity-prompts"
-#   filter_metric: "profanity"
-#   input_min_text_length: 15
-#   input_max_text_length: 20
-#   test_size: 0.1
   
   # Optional: VI training data paths for sanity checks
   original_dataset_path: null
@@ -60,7 +53,7 @@ irl:
   use_platt: false
   platt_a: 1.0
   platt_b: 0.0
-  features_on_cpu: true  # Recommended for GPU memory efficiency
+  features_on_cpu: false  # use true for GPU memory efficiency
   reward_scale: 20
   reward_clip: 3
 

@@ -31,9 +31,6 @@ defaults:
   - rlhf_config
   - evaluate_rlhf
 
-
-
-
 # Logging configuration
 logging:
   use_wandb: true

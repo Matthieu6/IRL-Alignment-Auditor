@@ -1,7 +1,7 @@
 # SmolLM-360M RLHF Configuration
 
 model:
-  name: "EleutherAI/pythia-410m"
+  name: "EleutherAI/pythia-410m
   learning_rate: 1e-6
   ppo_epochs: 4
   init_kl_coef: 0.3

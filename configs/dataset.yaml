@@ -3,8 +3,6 @@
 # Stand-alone config used by generate.py
 # All keys referenced in dataset_generator.py are declared here
 # ──────────────────────────────────────────────────────────────
-
-
 # ------------ dataset ------------
 
 dataset:
@@ -18,7 +16,7 @@ dataset:
   test_samples: 600    # Number of samples for testing datasets
 
   max_new_tokens: 30
-  batch_size: 16
+  batch_size: 256
   temperature: 1.0
   top_p: 1.0
   
