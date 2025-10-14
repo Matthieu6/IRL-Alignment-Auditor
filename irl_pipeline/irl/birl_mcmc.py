@@ -29,16 +29,7 @@ def _log_likelihood_bradley_terry(theta, demos, alpha, temperature=1.0, threshol
         temperature: Temperature for calibration
         threshold: Optional threshold for binary classification loss
     """
-    # BEFOFREEEEEE
-    # diffs = torch.stack([(good - bad) for bad, good in demos])  # (N,d)
-    # logits = (alpha * (diffs @ theta)) / temperature
-    # # Clamp logits to prevent numerical overflow/underflow
-    # logits = torch.clamp(logits, min=-20.0, max=20.0)
-    
-    # # Bradley-Terry pairwise loss
-    # bt_loss = torch.nn.functional.logsigmoid(logits).sum()
-    
-    
+
     
     # AFTERRRR
     # Stack differences Δφ = φ_good - φ_bad  -> shape (N, d)

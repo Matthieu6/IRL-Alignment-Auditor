@@ -13,7 +13,7 @@ from tqdm import tqdm
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from datasets import load_dataset, Dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModelForSequenceClassification
 from huggingface_hub import HfApi
 import wandb
 from omegaconf import DictConfig, OmegaConf
@@ -28,6 +28,33 @@ class LengthSampler:
     
     def __call__(self) -> int:
         return random.randint(self.min_length, self.max_length)
+
+
+def compute_scores(texts: List[str], model_name: str, batch_size: int = 8, device: str = None) -> np.ndarray:
+    """Compute toxicity scores for a list of texts using the specified model."""
+    device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    model.to(device)
+    model.eval()
+
+    scores = []
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i + batch_size]
+        inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = model(**inputs)
+            # Get the probability of the positive class (toxic)
+            probs = torch.softmax(outputs.logits, dim=-1)
+            if probs.shape[1] == 2:  # Binary classification
+                batch_scores = probs[:, 1].cpu().numpy()  # Probability of positive class
+            else:  # Multi-class, assume last class is toxic
+                batch_scores = probs[:, -1].cpu().numpy()
+            scores.extend(batch_scores)
+    
+    return np.array(scores)
 
 
 class DatasetGenerator:
@@ -232,7 +259,6 @@ class DatasetGenerator:
 
         # Optionally classify outputs into toxic/non-toxic groups
         if getattr(self.config.dataset, "sort_out_toxic_nontoxic", False):
-            from irl_pipeline.dataset.utils import compute_scores
             
             classifier = getattr(
                 self.config.dataset,
