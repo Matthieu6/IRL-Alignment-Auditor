@@ -57,6 +57,10 @@ class GroundTruthGenerator:
         
         # Load classifier
         self.tokenizer = AutoTokenizer.from_pretrained(classifier_name)
+        # Fix for GPT2-based models that don't have a pad token
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+            print(f"   ⚙️  Set pad_token = eos_token (GPT2 tokenizer fix)")
         self.model = AutoModelForSequenceClassification.from_pretrained(classifier_name).to(self.device)
         self.model.eval()
         
