@@ -185,18 +185,19 @@ class GroundTruthGenerator:
                     max_length=512
                 ).to(self.device)
                 
-                # Get raw logits (rewards)
+                # Get raw logits (rewards) - keep on GPU
                 with torch.no_grad():
                     logits = self.model(**encoded).logits
                     # For single-label regression, logits shape is (batch_size, 1)
-                    # Squeeze to get (batch_size,)
-                    batch_rewards = logits.squeeze(-1).cpu().numpy()
-                    rewards_list.extend(batch_rewards.tolist())
+                    # Squeeze to get (batch_size,) and keep on GPU
+                    batch_rewards = logits.squeeze(-1)
+                    rewards_list.append(batch_rewards)
                 
                 if (i // batch_size + 1) % 10 == 0:
                     print(f"      Processed {i + len(batch)}/{len(texts)} texts...")
             
-            rewards = np.array(rewards_list)
+            # Concatenate all batches on GPU, then move to CPU once
+            rewards = torch.cat(rewards_list).cpu().numpy()
         
         print(f"   Ground truth rewards: min={rewards.min():.4f}, max={rewards.max():.4f}, mean={rewards.mean():.4f}")
         print(f"   ✅ Higher rewards = Better content")
