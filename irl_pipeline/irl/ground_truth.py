@@ -13,8 +13,8 @@ Supports two types of models:
 
 2. Regression models (e.g., Ray2333/gpt2-large-helpful-reward_model):
    - Single-label output  
-   - Uses raw model logits as rewards: r*(o) = model(o)
-   - Higher reward = more helpful/harmless = better
+   - Uses negated model logits as rewards: r*(o) = -model(o)
+   - Model convention: lower = better, so we negate to get higher = better
 
 Method:
 1. Load training data (original + detoxified datasets)
@@ -74,10 +74,10 @@ class GroundTruthGenerator:
         # Determine model type based on number of labels
         if num_labels == 1:
             # Regression model (e.g., GPT2 reward model)
-            # Single output where higher = better (more helpful/harmless)
+            # Model outputs: lower = better, so we negate to get higher = better
             self.model_type = "regression"
-            print(f"   🎯 Detected REGRESSION model: using raw logits as rewards")
-            print(f"      Higher scores = more helpful/harmless/better")
+            print(f"   🎯 Detected REGRESSION model: using NEGATED logits as rewards")
+            print(f"      Model convention: lower=better, negating to higher=better")
         else:
             # Classification model (e.g., toxicity classifier)
             # Multiple labels, need to convert probabilities to rewards
@@ -144,10 +144,11 @@ class GroundTruthGenerator:
             Higher values = less toxic = better content
             
         For REGRESSION models (e.g., GPT2 reward models):
-            r*(o) = raw logits from model
-            Higher values = more helpful/harmless = better content
+            Model outputs: lower = better (more helpful/harmless)
+            r*(o) = -model(o)  [negated to match convention]
+            After negation: higher values = better content
         
-        In both cases: Higher reward = Better content
+        In both cases: Higher reward = Better content (after any necessary transformations)
         """
         print("🎯 Computing ground truth rewards...")
         
@@ -168,8 +169,8 @@ class GroundTruthGenerator:
             rewards = logits
             
         else:  # regression
-            # Regression model: use raw logits directly as rewards
-            print("   Using REGRESSION method: raw model logits")
+            # Regression model: negate logits to flip convention
+            print("   Using REGRESSION method: negated model logits")
             print(f"   Processing {len(texts)} texts...")
             
             rewards_list = []
@@ -185,13 +186,13 @@ class GroundTruthGenerator:
                     max_length=512
                 ).to(self.device)
                 
-                # Get raw logits (rewards) - keep on GPU
+                # Get raw logits and negate (model: lower=better → negated: higher=better)
                 with torch.inference_mode():
                     logits = self.model(**encoded).logits
                     # For single-label regression, logits shape is (batch_size, 1)
-                    # Squeeze to get (batch_size,) and keep on GPU
+                    # Model convention: lower score = more helpful/harmless
+                    # Negate to match IRL convention: higher reward = better
                     batch_rewards = -logits.squeeze(-1)
-                    # larger is worse, smaller is more helpful
                     rewards_list.append(batch_rewards)
                 
                 if (i // batch_size + 1) % 10 == 0:
