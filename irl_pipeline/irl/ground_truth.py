@@ -186,11 +186,12 @@ class GroundTruthGenerator:
                 ).to(self.device)
                 
                 # Get raw logits (rewards) - keep on GPU
-                with torch.no_grad():
+                with torch.inference_mode():
                     logits = self.model(**encoded).logits
                     # For single-label regression, logits shape is (batch_size, 1)
                     # Squeeze to get (batch_size,) and keep on GPU
-                    batch_rewards = logits.squeeze(-1)
+                    batch_rewards = -logits.squeeze(-1)
+                    # larger is worse, smaller is more helpful
                     rewards_list.append(batch_rewards)
                 
                 if (i // batch_size + 1) % 10 == 0:
