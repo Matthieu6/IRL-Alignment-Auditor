@@ -393,7 +393,15 @@ def train_vi_bt(
             history["acc_train"].append(acc_tr)
             history["acc_val_fixed"].append(acc_vf)
             history["mu_norm"].append(float(mu.norm().item()))
-            print(f"[step {t:5d}] loss={loss:,.1f} | acc_tr={acc_tr:.3f} acc_val_fixed={acc_vf:.3f} | ||mu||={history['mu_norm'][-1]:.3f}")
+
+            # NEW: internal frac_detox>orig on VAL_MONITOR
+            with torch.no_grad():
+                # dp_val_fixed = phi_detox - phi_orig for VAL_MONITOR
+                # we only need sign(theta·dp), no teacher
+                margins_val = (theta_s @ dp_val_fixed.T).mean(0).cpu().numpy()
+                frac_detox_higher_val = float((margins_val > 0).mean())
+
+            print(f"[step {t:5d}] loss={loss:,.1f} | acc_tr={acc_tr:.3f} acc_val_fixed={acc_vf:.3f} | frac_detox>orig_val={frac_detox_higher_val:.3f} | ||mu||={history['mu_norm'][-1]:.3f}")
 
     mu = pyro.param("mu_q").detach().cpu()
     sig = pyro.param("sig_q").detach().cpu()
@@ -1379,7 +1387,7 @@ def run_evaluation_logic(cfg: DictConfig, out_dir: Path):
         S = OmegaConf.select(cfg, "training.n_samples", default=256)
 
         theta_samples = dist.Normal(mu.to(device), sig.to(device)).sample((S,))
-
+        
         # ---------- Pairwise calibration ----------
         p_cal_raw = expected_pairwise_probs(dp_cal, theta_samples, T_vi, alpha=cfg.training.alpha)
         p_cal_raw = np.clip(p_cal_raw, 1e-7, 1 - 1e-7)
