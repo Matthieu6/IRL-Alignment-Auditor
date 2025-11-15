@@ -1318,8 +1318,8 @@ def run_evaluation_logic(cfg: DictConfig, out_dir: Path):
         r_star_tox_bal  = gt.compute_ground_truth_rewards(tox_texts_bal)
         r_star_nont_bal = gt.compute_ground_truth_rewards(nont_texts_bal)
         # non-toxic = 1, toxic = 0
-        y_tox_labels  = (r_star_tox_bal  >= 0.0).astype(int)
-        y_nont_labels = (r_star_nont_bal >= 0.0).astype(int)
+        y_tox_labels  = (r_star_tox_bal  >= 0.0).astype(int) # when r_star_tox_bal is negative, it is toxic
+        y_nont_labels = (r_star_nont_bal >= 0.0).astype(int) # when r_star_nont_bal is negative, it is non-toxic
     else:
         y_tox_labels  = np.zeros(len(tox_texts_bal), dtype=int)
         y_nont_labels = np.ones(len(nont_texts_bal), dtype=int)

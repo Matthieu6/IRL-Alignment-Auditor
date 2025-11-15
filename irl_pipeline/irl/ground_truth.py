@@ -192,7 +192,7 @@ class GroundTruthGenerator:
                     # For single-label regression, logits shape is (batch_size, 1)
                     # Model convention: lower score = more helpful/harmless
                     # Negate to match IRL convention: higher reward = better
-                    batch_rewards = -logits.squeeze(-1)
+                    batch_rewards = logits.squeeze(-1)
                     rewards_list.append(batch_rewards)
                 
                 if (i // batch_size + 1) % 10 == 0:
