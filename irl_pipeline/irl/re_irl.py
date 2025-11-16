@@ -1206,6 +1206,66 @@ def run_evaluation_logic(cfg: DictConfig, out_dir: Path):
     y_toxic_orig = (r_star_orig < 0.0).astype(np.int32)
     print(f"Class ratio ALL (toxic proportion) = {y_toxic_orig.mean():.3f}")
 
+    # ---------- sorted single-text data (BALANCED, teacher labels BEFORE base model load) ----------
+    sorted_toxic = load_json(sorted_toxic_path)
+    sorted_nont  = load_json(sorted_nontoxic_path)
+    print(f"[SORTED] loaded toxic={len(sorted_toxic)}  non-toxic={len(sorted_nont)}")
+
+    rng = np.random.default_rng(cfg.seed)
+    base_name = cfg.model.base_model_name
+
+    def _filter_by_model(rows, name):
+        # First try exact match
+        kept = [r for r in rows if r.get("model_name", "") == name]
+        if kept:
+            return kept
+        # If no exact match, try partial match (for compatibility)
+        model_short = name.split('/')[-1] if '/' in name else name
+        kept = [r for r in rows if model_short in r.get("model_name", "")]
+        if kept:
+            return kept
+        # If still no match, return all (fallback for compatibility)
+        print(f"⚠️  No model_name filter match for '{name}', using all rows")
+        return rows
+
+    # keep only base model (not the detox model)
+    sorted_toxic_bm = _filter_by_model(sorted_toxic, base_name)
+    sorted_nont_bm  = _filter_by_model(sorted_nont,  base_name)
+    print(f"[SORTED] kept by model_name={base_name}: toxic={len(sorted_toxic_bm)}  non-toxic={len(sorted_nont_bm)}")
+    
+    # Relaxed assertion - just need some data
+    if len(sorted_toxic_bm) == 0 or len(sorted_nont_bm) == 0:
+        print(f"⚠️  Warning: Limited sorted data - toxic={len(sorted_toxic_bm)}, non-toxic={len(sorted_nont_bm)}")
+        if len(sorted_toxic_bm) == 0:
+            sorted_toxic_bm = sorted_toxic[:10] if sorted_toxic else []
+        if len(sorted_nont_bm) == 0:
+            sorted_nont_bm = sorted_nont[:10] if sorted_nont else []
+
+    # balance to the same count on both sides
+    n_bal = min(len(sorted_toxic_bm), len(sorted_nont_bm))
+    idx_tox_keep  = rng.choice(len(sorted_toxic_bm),  n_bal, replace=False)
+    idx_nont_keep = rng.choice(len(sorted_nont_bm), n_bal, replace=False)
+
+    sorted_toxic_bal = [sorted_toxic_bm[i] for i in idx_tox_keep]
+    sorted_nont_bal  = [sorted_nont_bm[i]  for i in idx_nont_keep]
+
+    tox_texts_bal  = [x["output"] for x in sorted_toxic_bal]
+    nont_texts_bal = [x["output"] for x in sorted_nont_bal]
+    print(f"[SORTED] using balanced sets (by model_name): toxic={len(tox_texts_bal)}  non-toxic={len(nont_texts_bal)}")
+
+    # Single-text labels (teacher or membership) ON THE BALANCED SETS
+    use_teacher_labels_for_sorted = OmegaConf.select(cfg, "evaluation.use_teacher_labels_for_sorted", default=True)
+    if use_teacher_labels_for_sorted:
+        # IMPORTANT: this now runs while ONLY the RM is on GPU (8B model not yet loaded)
+        r_star_tox_bal  = gt.compute_ground_truth_rewards(tox_texts_bal)
+        r_star_nont_bal = gt.compute_ground_truth_rewards(nont_texts_bal)
+        # non-toxic = 1, toxic = 0
+        y_tox_labels  = (r_star_tox_bal  >= 0.0).astype(int)  # when r_star_tox_bal is negative, it is toxic
+        y_nont_labels = (r_star_nont_bal >= 0.0).astype(int)  # when r_star_nont_bal is negative, it is non-toxic
+    else:
+        y_tox_labels  = np.zeros(len(tox_texts_bal), dtype=int)
+        y_nont_labels = np.ones(len(nont_texts_bal), dtype=int)
+
     # Feature extraction
     print(f"Extracting features with {cfg.model.base_model_name} ...")
     feat = SimplifiedIRLRewardComputer(
@@ -1262,75 +1322,18 @@ def run_evaluation_logic(cfg: DictConfig, out_dir: Path):
     np.save(out_dir / "train_pool_idx.npy", np.asarray(pool_idx, dtype=np.int64))
     print(f"[SAVED] {out_dir/'global_mean.npy'}, {out_dir/'global_std.npy'}, {out_dir/'train_pool_idx.npy'}")
 
-
-
-
-    # ---------- sorted single-text data (BALANCE: keep only base-model rows, then 1:1 balance) ----------
-    sorted_toxic = load_json(sorted_toxic_path)
-    sorted_nont  = load_json(sorted_nontoxic_path)
-    print(f"[SORTED] loaded toxic={len(sorted_toxic)}  non-toxic={len(sorted_nont)}")
-
-    rng = np.random.default_rng(cfg.seed)
-    base_name = cfg.model.base_model_name
-
-    def _filter_by_model(rows, name):
-        # First try exact match
-        kept = [r for r in rows if r.get("model_name", "") == name]
-        if kept:
-            return kept
-        # If no exact match, try partial match (for compatibility)
-        model_short = name.split('/')[-1] if '/' in name else name
-        kept = [r for r in rows if model_short in r.get("model_name", "")]
-        if kept:
-            return kept
-        # If still no match, return all (fallback for compatibility)
-        print(f"⚠️  No model_name filter match for '{name}', using all rows")
-        return rows
-
-    # keep only base model (not the detox model)
-    sorted_toxic_bm = _filter_by_model(sorted_toxic, base_name)
-    sorted_nont_bm  = _filter_by_model(sorted_nont,  base_name)
-    print(f"[SORTED] kept by model_name={base_name}: toxic={len(sorted_toxic_bm)}  non-toxic={len(sorted_nont_bm)}")
-    
-    # Relaxed assertion - just need some data
-    if len(sorted_toxic_bm) == 0 or len(sorted_nont_bm) == 0:
-        print(f"⚠️  Warning: Limited sorted data - toxic={len(sorted_toxic_bm)}, non-toxic={len(sorted_nont_bm)}")
-        if len(sorted_toxic_bm) == 0:
-            sorted_toxic_bm = sorted_toxic[:10] if sorted_toxic else []
-        if len(sorted_nont_bm) == 0:
-            sorted_nont_bm = sorted_nont[:10] if sorted_nont else []
-
-    # balance to the same count on both sides
-    n_bal = min(len(sorted_toxic_bm), len(sorted_nont_bm))
-    idx_tox_keep  = rng.choice(len(sorted_toxic_bm),  n_bal, replace=False)
-    idx_nont_keep = rng.choice(len(sorted_nont_bm), n_bal, replace=False)
-
-    sorted_toxic_bal = [sorted_toxic_bm[i] for i in idx_tox_keep]
-    sorted_nont_bal  = [sorted_nont_bm[i]  for i in idx_nont_keep]
-
-    tox_texts_bal  = [x["output"] for x in sorted_toxic_bal]
-    nont_texts_bal = [x["output"] for x in sorted_nont_bal]
-    print(f"[SORTED] using balanced sets (by model_name): toxic={len(tox_texts_bal)}  non-toxic={len(nont_texts_bal)}")
-
-
-    # Extract features ONLY for the balanced sets
+    # Extract features ONLY for the balanced sorted sets (now that global stats are fixed)
     with torch.no_grad():
-        phi_tox_raw  = feat.extract_features(tox_texts_bal,  max_length=cfg.training.max_length,
-                                             batch_size=cfg.training.batch_size)
-        phi_nont_raw = feat.extract_features(nont_texts_bal, max_length=cfg.training.max_length,
-                                             batch_size=cfg.training.batch_size)
-
-    # Single-text labels (teacher or membership) ON THE BALANCED SETS
-    use_teacher_labels_for_sorted = OmegaConf.select(cfg, "evaluation.use_teacher_labels_for_sorted", default=True)
-    if use_teacher_labels_for_sorted:
-        r_star_tox_bal  = gt.compute_ground_truth_rewards(tox_texts_bal)
-        r_star_nont_bal = gt.compute_ground_truth_rewards(nont_texts_bal)
-        # non-toxic = 1, toxic = 0
-        y_tox_labels  = (r_star_tox_bal  >= 0.0).astype(int) # when r_star_tox_bal is negative, it is toxic
-        y_nont_labels = (r_star_nont_bal >= 0.0).astype(int) # when r_star_nont_bal is negative, it is non-toxic
-    else:
-        y_tox_labels  = np.zeros(len(tox_texts_bal), dtype=int)
-        y_nont_labels = np.ones(len(nont_texts_bal), dtype=int)
+        phi_tox_raw  = feat.extract_features(
+            tox_texts_bal,
+            max_length=cfg.training.max_length,
+            batch_size=cfg.training.batch_size,
+        )
+        phi_nont_raw = feat.extract_features(
+            nont_texts_bal,
+            max_length=cfg.training.max_length,
+            batch_size=cfg.training.batch_size,
+        )
 
 
 
