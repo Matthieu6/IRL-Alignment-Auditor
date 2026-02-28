@@ -218,8 +218,8 @@ If you use this code in your research, please cite:
 @article{bou2024alignment,
   title={The Alignment Auditor: A Bayesian Framework for Verifying and Refining LLM Objectives},
   author={Bou, Matthieu and Patel, Nyal and Jagota, Arjun and Krishna, Satyapriya and Parbhoo, Sonali},
-  journal={arXiv preprint arXiv:2510.06096},
-  year={2024},
+  journal={In Proceedings of International Conference on Learning Representations (ICLR) 2026},
+  year={2026},
   url={https://arxiv.org/abs/2510.06096}
 }
 ```
